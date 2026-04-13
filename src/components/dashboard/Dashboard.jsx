@@ -52,6 +52,11 @@ function Dashboard() {
       desc: "See where you stand. Earn points through quizzes and consistency.",
       path: `${base}/leaderboard`, color: "#f39c12"
     },
+    {
+      icon: "💬", title: "Study Chat", badge: "Real-time",
+      desc: "Chat with study partners, form groups, share notes. Zero distractions.",
+      path: `${base}/studychat`, color: "#7c3aed"
+    },
   ];
 
   return (

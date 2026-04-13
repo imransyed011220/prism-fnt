@@ -155,6 +155,7 @@ function LeaderboardPage() {
   const [myRank, setMyRank] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     loadLeaderboard();
@@ -186,6 +187,12 @@ function LeaderboardPage() {
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
   const config = PERIOD_CONFIG[period];
+
+  // Filter entries
+  const filteredEntries = entries.filter(e =>
+    !searchQuery.trim() ||
+    `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="container py-4" style={{ maxWidth: "800px" }}>
@@ -271,9 +278,20 @@ function LeaderboardPage() {
           )}
 
           {/* rest of leaderboard */}
+          <div className="mb-3">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="🔍 Search by name..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{ borderRadius: "20px" }}
+            />
+          </div>
+          
           <div className="card shadow overflow-hidden">
             {/* top 3 in list too */}
-            {entries.map((entry, i) => (
+            {filteredEntries.map((entry, i) => (
               <LeaderboardRow
                 key={entry.userId}
                 entry={entry}

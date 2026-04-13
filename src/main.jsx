@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.css";
 import "./index.css";
+import StudyChatPage from "./components/studychat/StudyChatPage";
+import { StudyChatProvider } from "./contexts/StudyChatContext";
 
 import RootLayout from "./components/RootLayout";
 import Home from "./components/common/Home";
@@ -74,6 +76,14 @@ const router = createBrowserRouter([
       {
         path: "dashboard/:email/leaderboard",
         element: <LeaderboardPage />
+      },
+      {
+        path: "dashboard/:email/studychat",
+        element: (
+          <StudyChatProvider>
+            <StudyChatPage />
+          </StudyChatProvider>
+        )
       },
     ],
   },
