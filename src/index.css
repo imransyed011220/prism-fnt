@@ -1,3 +1,6 @@
+/* Import font that supports full Unicode including math symbols */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap');
+
 /* markdown body styles for assistant responses */
 .markdown-body p { margin-bottom: 0.5rem; line-height: 1.7; }
 .markdown-body h1, .markdown-body h2, .markdown-body h3 { 
@@ -90,3 +93,16 @@
 }
 /* KaTeX display math centering */
 .math-renderer .katex-display { margin: 1rem 0; overflow-x: auto; }
+
+
+
+/* Apply to entire app */
+body, input, textarea, button {
+  font-family: 'Noto Sans', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Chat input specifically */
+.chat-input-field {
+  font-family: 'Noto Sans', monospace, sans-serif !important;
+  unicode-bidi: embed;
+}

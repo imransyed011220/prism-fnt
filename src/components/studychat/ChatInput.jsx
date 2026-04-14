@@ -3,6 +3,8 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useStudyChat } from "../../contexts/StudyChatContext";
+import { normalizePastedText } from "../../utils/textNormalizer";
+
 
 function ChatInput({ onSend, chatType }) {
   const [text, setText] = useState("");
@@ -124,6 +126,12 @@ function ChatInput({ onSend, chatType }) {
         value={text}
         onChange={handleTextChange}
         onKeyDown={handleKeyDown}
+        onPaste={(e) => {
+          e.preventDefault();
+          const raw = e.clipboardData?.getData("text/plain") || "";
+          const normalized = normalizePastedText(raw);
+          setText(prev => prev + normalized);
+        }}
         style={{
           resize: "none",
           borderRadius: "20px",
