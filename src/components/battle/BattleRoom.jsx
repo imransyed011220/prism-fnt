@@ -2,7 +2,9 @@
 // Active battle room — waiting lobby, quiz, live leaderboard
 
 import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import MathRenderer from "../common/MathRenderer";
+import { API_URL } from "../../config/backend";
 
 function Timer({ duration, onExpire, questionStartTime }) {
   const [remaining, setRemaining] = useState(duration);
@@ -78,13 +80,14 @@ function BattleRoom({ room: initialRoom, userId, socket, onLeave }) {
 
   const isHost = room?.hostId === userId;
   const questionStartRef = useRef(0);
+  const syncedQuestionRef = useRef(-1);
 
   function applyRoomState(nextRoom) {
     if (!nextRoom) return;
     setRoom(nextRoom);
     // The room document is authoritative. Keep the existing waiting view while
     // questions are being generated, then follow the shared lifecycle state.
-    if (nextRoom.status !== "generating") {
+    if (nextRoom.status !== "generating" && nextRoom.status !== "countdown") {
       setStatus(nextRoom.status);
     }
   }
@@ -99,6 +102,7 @@ function BattleRoom({ room: initialRoom, userId, socket, onLeave }) {
       setCountdown(count);
     });
     socket.on("battle_started", (data) => {
+      syncedQuestionRef.current = data.questionIndex;
       setRoom(prev => ({
         ...prev,
         status: "active",
@@ -118,6 +122,7 @@ function BattleRoom({ room: initialRoom, userId, socket, onLeave }) {
       setGeneratingMsg("");
     });
     socket.on("next_question", (data) => {
+      syncedQuestionRef.current = data.questionIndex;
       setCurrentQuestion(data.question);
       setQuestionIndex(data.questionIndex);
       setUseTimer(data.useTimer !== false);
@@ -147,6 +152,51 @@ function BattleRoom({ room: initialRoom, userId, socket, onLeave }) {
         .forEach(e => socket.off(e));
     };
   }, [socket, onLeave]);
+
+  // MongoDB is the shared source of truth when each laptop runs its own
+  // backend process. Socket.IO events still handle the normal single-server
+  // path, while this lightweight poll handles cross-process updates.
+  useEffect(() => {
+    if (!room?.roomId) return;
+
+    let cancelled = false;
+
+    const syncPersistedState = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/battle/room/${room.roomId}/state`);
+        const persistedRoom = response.data.payload;
+        if (cancelled || !persistedRoom) return;
+
+        applyRoomState(persistedRoom);
+
+        const index = Number(persistedRoom.currentQuestion || 0);
+        const questions = persistedRoom.questions || [];
+        if (persistedRoom.status === "active" && questions[index] && syncedQuestionRef.current !== index) {
+          syncedQuestionRef.current = index;
+          setStatus("active");
+          setCurrentQuestion(questions[index]);
+          setQuestionIndex(index);
+          setTotalQuestions(questions.length);
+          setUseTimer(persistedRoom.useTimer !== false);
+          setTimePerQ(persistedRoom.timePerQuestion || 30);
+          setQuestionStart(persistedRoom.questionStartTime || persistedRoom.startTime);
+          setSelectedAnswer(null);
+          setAnswerResult(null);
+          setAnswered(false);
+          setGeneratingMsg("");
+        }
+      } catch (error) {
+        console.error("Failed to sync persisted battle room state:", error);
+      }
+    };
+
+    syncPersistedState();
+    const interval = setInterval(syncPersistedState, 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [room?.roomId]);
 
   function handleSubmitAnswer(answer) {
     if (answered || !socket) return;
