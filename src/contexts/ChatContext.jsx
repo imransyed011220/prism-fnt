@@ -10,6 +10,7 @@ import {
   deleteSession,
   sendMessage,
 } from "../services/api";
+import { useAgentTrace } from "../hooks/useAgentTrace";
 
 const ChatContext = createContext();
 
@@ -23,6 +24,7 @@ export function ChatProvider({ children }) {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [abortController, setAbortController] = useState(null);
+  const { nodes: traceNodes, isActive: isTraceActive, startTrace, stopTrace, getSnapshot } = useAgentTrace();
 
   // ← ref always holds latest messages — fixes stale closure
   const messagesRef = useRef([]);
@@ -120,8 +122,10 @@ export function ChatProvider({ children }) {
     // create abort controller for stop button
     const controller = new AbortController();
     setAbortController(controller);
+    const traceId = crypto.randomUUID();
 
     try {
+      await startTrace(traceId, userId);
       // priority: forcedSessionId > activeSession > create new
       let currentSessionId = forcedSessionId
         || activeSession?.sessionId
@@ -141,7 +145,7 @@ export function ChatProvider({ children }) {
       console.log(`[ChatContext] Sending with ${recentMessages.length} history messages`);
 
       const res = await sendMessage(
-        { query, userId, examTarget, sessionId: currentSessionId, recentMessages },
+        { query, userId, examTarget, sessionId: currentSessionId, recentMessages, traceId },
         controller.signal
       );
 
@@ -152,6 +156,7 @@ export function ChatProvider({ children }) {
         content: res.data.payload.answer,
         sources: res.data.payload.sources || [],
         timestamp: new Date().toISOString(),
+        trace: res.data.payload.trace || getSnapshot(),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
@@ -186,8 +191,9 @@ export function ChatProvider({ children }) {
     } finally {
       setIsLoading(false);
       setAbortController(null);
+      stopTrace();
     }
-  }, [activeSession, startNewSession, loadSessions]);
+  }, [activeSession, startNewSession, loadSessions, startTrace, stopTrace, getSnapshot]);
 
 
   // stop current response
@@ -213,6 +219,8 @@ export function ChatProvider({ children }) {
       activeSession,
       messages,
       isLoading,
+      traceNodes,
+      isTraceActive,
       setMessages,
       loadSessions,
       loadSession,

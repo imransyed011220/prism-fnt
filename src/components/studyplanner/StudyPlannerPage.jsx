@@ -79,7 +79,7 @@ function StudyPlannerPage() {
         setPlan(res.data.payload);
         setActiveTab("overview");
       }
-    } catch (err) {
+    } catch {
       alert("Failed to generate plan. Try again.");
     } finally {
       setGenerating(false);

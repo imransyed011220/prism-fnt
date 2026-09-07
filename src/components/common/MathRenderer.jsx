@@ -5,6 +5,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { useEffect, useRef } from "react";
@@ -61,13 +62,27 @@ function MermaidDiagram({ code }) {
   );
 }
 
+function normalizeMathDelimiters(content) {
+  return String(content)
+    // Some model responses use HTML breaks instead of markdown line breaks.
+    .replace(/<br\s*\/?>/gi, "\n")
+    // Some model/API responses contain JSON-escaped LaTeX delimiters.
+    .replace(/\\\\\(/g, "\\(")
+    .replace(/\\\\\)/g, "\\)")
+    .replace(/\\\\\[/g, "\\[")
+    .replace(/\\\\\]/g, "\\]")
+    // remark-math renders dollar delimiters consistently across versions.
+    .replace(/\\\(([^\n]*?)\\\)/g, (_, formula) => `$${formula}$`)
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => `$$${formula}$$`);
+}
+
 function MathRenderer({ content, className = "" }) {
   if (!content) return null;
 
   return (
     <div className={`math-renderer ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeKatex]}
         components={{
           // style code blocks nicely
@@ -138,7 +153,7 @@ function MathRenderer({ content, className = "" }) {
           }
         }}
       >
-        {content}
+        {normalizeMathDelimiters(content)}
       </ReactMarkdown>
     </div>
   );
