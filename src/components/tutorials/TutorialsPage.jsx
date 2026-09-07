@@ -31,6 +31,7 @@ function TutorialsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   const subjects = currentUser?.examTarget === "NEET"
     ? ["Physics", "Chemistry", "Biology"]
@@ -89,6 +90,28 @@ function TutorialsPage() {
     if (count >= 1000000) return `${(count/1000000).toFixed(1)}M views`;
     if (count >= 1000) return `${(count/1000).toFixed(0)}K views`;
     return `${count} views`;
+  }
+
+  function getYouTubeVideoId(video) {
+    const candidate = String(video?.id || "").trim();
+    if (/^[A-Za-z0-9_-]{11}$/.test(candidate)) return candidate;
+
+    const rawUrl = String(video?.url || "").trim();
+    if (!rawUrl) return null;
+    try {
+      const url = new URL(rawUrl);
+      if (url.hostname === "youtu.be") {
+        const id = url.pathname.slice(1).split("/")[0];
+        return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+      }
+      if (url.hostname.endsWith("youtube.com")) {
+        const id = url.searchParams.get("v") || url.pathname.match(/\/(?:embed|shorts|live)\/([^/?]+)/)?.[1];
+        return /^[A-Za-z0-9_-]{11}$/.test(id || "") ? id : null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
   }
 
   return (
@@ -156,14 +179,53 @@ function TutorialsPage() {
         </div>
       )}
 
-      <div className="row g-4">
+      {selectedVideo ? (
+        <section className="tutorial-player-shell">
+          <button className="btn btn-outline-secondary tutorial-back-button mb-3" onClick={() => setSelectedVideo(null)}>
+            ← Back to tutorial results
+          </button>
+
+          <div className="tutorial-player-card">
+            <div className="tutorial-player-frame">
+              {getYouTubeVideoId(selectedVideo) ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${getYouTubeVideoId(selectedVideo)}?rel=0&modestbranding=1&playsinline=1`}
+                  title={selectedVideo.title || "PRISM tutorial video"}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="tutorial-player-unavailable">
+                  <div className="tutorial-player-unavailable-icon">▶</div>
+                  <h5>Video preview unavailable</h5>
+                  <p className="text-secondary mb-0">This result is a search fallback and does not contain a specific video ID to embed.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="tutorial-player-details">
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                <span className="badge text-bg-primary">{subject}</span>
+                <span className="badge text-bg-light border text-secondary">{topic}</span>
+                <span className="badge text-bg-light border text-secondary">{language}</span>
+              </div>
+              <h4 className="fw-bold mb-2">{selectedVideo.title}</h4>
+              <div className="text-secondary small d-flex flex-wrap gap-3">
+                <span>{selectedVideo.channel}</span>
+                {selectedVideo.duration && <span>{selectedVideo.duration}</span>}
+                {selectedVideo.views && <span>{selectedVideo.views}</span>}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : <div className="row g-4">
         {videos.map((video, i) => (
           <div key={i} className="col-md-6 col-lg-4">
-            <a
-              href={video.url || `https://www.youtube.com/watch?v=${video.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => setSelectedVideo(video)}
               className="text-decoration-none"
+              style={{ border: 0, padding: 0, background: "transparent", width: "100%", textAlign: "left" }}
             >
               <div
                 className="card h-100 shadow"
@@ -229,10 +291,10 @@ function TutorialsPage() {
                   )}
                 </div>
               </div>
-            </a>
+            </button>
           </div>
         ))}
-      </div>
+      </div>}
 
       {/* quick search links */}
       {!searched && (

@@ -78,6 +78,22 @@
 
 /* MathRenderer styles */
 .math-renderer p { margin-bottom: 0.5rem; line-height: 1.7; }
+
+/* In-app tutorial player */
+.tutorial-player-shell { max-width: 1120px; margin: 0 auto; }
+.tutorial-back-button { border-radius: 999px; font-weight: 600; }
+.tutorial-player-card { overflow: hidden; background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; box-shadow: 0 12px 32px rgba(15,23,42,.1); }
+.tutorial-player-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #0f172a; }
+.tutorial-player-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
+.tutorial-player-unavailable { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; color: #fff; }
+.tutorial-player-unavailable-icon { width: 58px; height: 58px; display: grid; place-items: center; margin-bottom: 1rem; border-radius: 50%; background: #6366f1; font-size: 1.4rem; }
+.tutorial-player-details { padding: 1.5rem 1.75rem 1.75rem; }
+.tutorial-player-details h4 { color: #172033; }
+
+@media (max-width: 576px) {
+  .tutorial-player-details { padding: 1.1rem; }
+  .tutorial-player-details h4 { font-size: 1.05rem; }
+}
 .math-renderer h1, .math-renderer h2, .math-renderer h3 {
   margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 700;
 }
