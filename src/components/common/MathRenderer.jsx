@@ -79,6 +79,16 @@ function normalizeMathDelimiters(content) {
 function MathRenderer({ content, className = "" }) {
   if (!content) return null;
 
+  // LLMs often output LaTeX delimiters, but remark-math expects $ and $$
+  // Use regex with a replacer function to safely replace delimiters.
+  // We only replace \( and \[ if they are not preceded by another backslash,
+  // preventing us from breaking LaTeX newlines with spacing like \\[2mm].
+  const processedContent = content
+    .replace(/(^|[^\\])\\\(/g, (match, p1) => p1 + '$')
+    .replace(/(^|[^\\])\\\)/g, (match, p1) => p1 + '$')
+    .replace(/(^|[^\\])\\\[/g, (match, p1) => p1 + '$$')
+    .replace(/(^|[^\\])\\\]/g, (match, p1) => p1 + '$$');
+
   return (
     <div className={`math-renderer ${className}`}>
       <ReactMarkdown
