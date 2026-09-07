@@ -5,6 +5,7 @@
 
 import { useRef, useState } from "react";
 import { normalizePastedText, hasRenderingIssues } from "../../utils/textNormalizer";
+import MathRenderer from "../common/MathRenderer";
 
 function ChatBox({ onSend, onStop, isLoading }) {
   const [input, setInput] = useState("");
@@ -125,6 +126,14 @@ function ChatBox({ onSend, onStop, isLoading }) {
               fontFamily: "'Noto Sans', monospace, sans-serif"
             }}
           />
+          {input.trim() && (
+            <div
+              className="mt-2 px-2 py-1 border rounded bg-light"
+              style={{ maxHeight: "140px", overflowY: "auto" }}
+            >
+              <MathRenderer content={input} className="small" />
+            </div>
+          )}
           <button
             className="btn position-absolute"
             style={{

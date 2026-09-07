@@ -10,7 +10,7 @@ import MathRenderer from "../common/MathRenderer";
 
 const COLORS = ["#28a745", "#dc3545", "#ffc107"];
 
-function QuizResults({ questions, userAnswers, onRetry, examTarget, userId }) {
+function QuizResults({ questions, userAnswers, onRetry, examTarget, userId, topic, difficulty }) {
 
   const analysis = useMemo(() => {
     let correct = 0, wrong = 0, skipped = 0;
@@ -48,8 +48,8 @@ function QuizResults({ questions, userAnswers, onRetry, examTarget, userId }) {
         await saveQuizResult({
           userId,
           examTarget,
-          topic: "Mixed",
-          difficulty: "medium",
+          topic: topic || "Mixed",
+          difficulty: difficulty || "medium",
           totalQuestions: questions.length,
           correct: analysis.correct,
           wrong: analysis.wrong,
@@ -83,10 +83,6 @@ function QuizResults({ questions, userAnswers, onRetry, examTarget, userId }) {
   const grade = getGrade();
 
   function getTips() {
-    const wrongTopics = analysis.breakdown
-      .filter(q => !q.isCorrect && !q.isSkipped)
-      .map(q => q.question.substring(0, 40));
-
     if (analysis.score === 100) return "Perfect score! Try harder difficulty next time.";
     if (analysis.wrong > analysis.correct) return "Focus on understanding concepts before attempting questions. Review NCERT basics first.";
     if (analysis.skipped > 2) return "Practice time management — don't skip questions in the actual exam.";
