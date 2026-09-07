@@ -6,6 +6,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { io } from "socket.io-client";
 import { useUserContext } from "./UserContext";
 import axios from "axios";
+import { SOCKET_URL, API_URL } from "../config/backend";
 
 const StudyChatContext = createContext();
 
@@ -13,8 +14,7 @@ export function useStudyChat() {
   return useContext(StudyChatContext);
 }
 
-const SOCKET_URL = "http://localhost:8000";
-const BASE = "http://localhost:8000/api";
+const BASE = API_URL;
 
 export function StudyChatProvider({ children }) {
   const { currentUser } = useUserContext();

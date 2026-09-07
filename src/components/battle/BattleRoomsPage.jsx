@@ -6,8 +6,9 @@ import { useUserContext } from "../../contexts/UserContext";
 import { useStudyChat } from "../../contexts/StudyChatContext";
 import axios from "axios";
 import BattleRoom from "./BattleRoom";
+import { API_URL } from "../../config/backend";
 
-const BASE = "http://localhost:8000/api";
+const BASE = API_URL;
 
 const TOPICS_JEE = [
   "Mixed (All Topics)", "Mechanics", "Thermodynamics", "Optics",
@@ -40,10 +41,11 @@ function CreateRoomModal({ onClose, onCreated, examTarget }) {
 
   function handleCreate() {
     if (!socket) return;
-    socket.emit("create_battle_room", form);
     socket.once("room_created", (data) => {
       onCreated(data);
     });
+    socket.once("battle_error", ({ message }) => alert(message));
+    socket.emit("create_battle_room", form);
     onClose();
   }
 
@@ -319,28 +321,25 @@ function BattleRoomsPage() {
 
   function handleJoinRoom(roomId) {
     if (!socket) return;
-    socket.emit("join_battle_room", {
-      userId: currentUser.userId,
-      roomId
-    });
     socket.once("room_updated", ({ room }) => {
       setCurrentRoom(room);
       setView("room");
     });
+    socket.once("battle_error", ({ message }) => alert(message));
+    socket.emit("join_battle_room", { roomId });
   }
 
   function handleJoinByCode() {
     if (!joinCode.trim() || !socket) return;
-    socket.emit("join_battle_room", {
-      userId: currentUser.userId,
-      inviteCode: joinCode.trim().toUpperCase()
-    });
     socket.once("room_updated", ({ room }) => {
       setCurrentRoom(room);
       setView("room");
     });
     socket.once("battle_error", ({ message }) => {
       alert(message);
+    });
+    socket.emit("join_battle_room", {
+      inviteCode: joinCode.trim().toUpperCase()
     });
   }
 
@@ -357,13 +356,19 @@ function BattleRoomsPage() {
     }
   }
 
+  const handleLeaveRoom = useCallback(() => {
+    setView("lobby");
+    setCurrentRoom(null);
+    loadPublicRooms();
+  }, [loadPublicRooms]);
+
   if (view === "room" && currentRoom) {
     return (
       <BattleRoom
         room={currentRoom}
         userId={currentUser?.userId}
         socket={socket}
-        onLeave={() => { setView("lobby"); setCurrentRoom(null); loadPublicRooms(); }}
+        onLeave={handleLeaveRoom}
       />
     );
   }

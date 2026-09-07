@@ -79,22 +79,32 @@ function BattleRoom({ room: initialRoom, userId, socket, onLeave }) {
   const isHost = room?.hostId === userId;
   const questionStartRef = useRef(0);
 
+  function applyRoomState(nextRoom) {
+    if (!nextRoom) return;
+    setRoom(nextRoom);
+    // The room document is authoritative. Keep the existing waiting view while
+    // questions are being generated, then follow the shared lifecycle state.
+    if (nextRoom.status !== "generating") {
+      setStatus(nextRoom.status);
+    }
+  }
+
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("room_updated", ({ room: r }) => setRoom(r));
-    socket.on("player_joined", ({ userId: uid }) => {
-      setRoom(prev => ({
-        ...prev,
-        members: [...(prev?.members || []), { userId: uid, score: 0 }]
-      }));
-    });
+    socket.on("room_updated", ({ room: r }) => applyRoomState(r));
     socket.on("generating_questions", ({ message }) => setGeneratingMsg(message));
     socket.on("battle_countdown", ({ count }) => {
       setStatus("countdown");
       setCountdown(count);
     });
     socket.on("battle_started", (data) => {
+      setRoom(prev => ({
+        ...prev,
+        status: "active",
+        currentQuestion: data.questionIndex,
+        questionStartTime: data.startTime
+      }));
       setStatus("active");
       setCurrentQuestion(data.question);
       setQuestionIndex(data.questionIndex);
@@ -132,7 +142,7 @@ function BattleRoom({ room: initialRoom, userId, socket, onLeave }) {
     });
 
     return () => {
-      ["room_updated","player_joined","generating_questions","battle_countdown",
+      ["room_updated","generating_questions","battle_countdown",
        "battle_started","next_question","answer_result","leaderboard_update","battle_ended","room_deleted"]
         .forEach(e => socket.off(e));
     };
