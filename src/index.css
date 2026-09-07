@@ -91,9 +91,27 @@
 .math-renderer blockquote {
   border-left: 3px solid #ccc; padding-left: 1rem; color: #666; margin: 0.5rem 0;
 }
-/* KaTeX display math centering */
-.math-renderer .katex-display { margin: 1rem 0; overflow-x: auto; }
-
+/* KaTeX display math centering and scrollbar fixes */
+.math-renderer .katex-display { 
+  margin: 1rem 0; 
+  overflow-x: auto; 
+  overflow-y: hidden; 
+  padding-bottom: 2px;
+}
+/* Modern thin scrollbar for math blocks */
+.math-renderer .katex-display::-webkit-scrollbar {
+  height: 6px;
+}
+.math-renderer .katex-display::-webkit-scrollbar-track {
+  background: transparent;
+}
+.math-renderer .katex-display::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.math-renderer .katex-display::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 
 
 /* Apply to entire app */
