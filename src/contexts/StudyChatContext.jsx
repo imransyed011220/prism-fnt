@@ -13,8 +13,8 @@ export function useStudyChat() {
   return useContext(StudyChatContext);
 }
 
-const SOCKET_URL = "http://localhost:8000";
-const BASE = "http://localhost:8000/api";
+const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BASE = `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api`;
 
 export function StudyChatProvider({ children }) {
   const { currentUser } = useUserContext();
@@ -33,6 +33,7 @@ export function StudyChatProvider({ children }) {
   const [unreadCounts, setUnreadCounts] = useState({});
 
   const typingTimeout = useRef({});
+  const activeChatRef = useRef(null);
 
   // ── Initialize Socket ─────────────────────────────────────────────────
   useEffect(() => {
@@ -60,8 +61,9 @@ export function StudyChatProvider({ children }) {
     newSocket.on("new_dm", (message) => {
       setMessages(prev => {
         // only add if it's for the active chat
-        const activeConvoId = activeChat?.type === "dm"
-          ? [...[currentUser.userId, activeChat.id]].sort().join("_") : null;
+        const activeChatSnap = activeChatRef.current;
+        const activeConvoId = activeChatSnap?.type === "dm"
+          ? [...[currentUser.userId, activeChatSnap.id]].sort().join("_") : null;
 
         if (message.conversationId === activeConvoId) {
           // ensure we don't accidentally duplicate
@@ -72,7 +74,7 @@ export function StudyChatProvider({ children }) {
         return prev;
       });
 
-      // update conversations list
+      // update conversations list — also create a stub if conversation not yet loaded
       setConversations(prev => {
         const existing = prev.findIndex(c => c.conversationId === message.conversationId);
         if (existing >= 0) {
@@ -85,12 +87,24 @@ export function StudyChatProvider({ children }) {
           return updated.sort((a, b) =>
             new Date(b.lastMessageTime) - new Date(a.lastMessageTime)
           );
+        } else {
+          // New conversation — add a stub so sidebar shows it without refresh
+          const otherId = message.fromUserId === currentUser.userId
+            ? message.toUserId : message.fromUserId;
+          const stub = {
+            conversationId: message.conversationId,
+            participants: [currentUser.userId, otherId],
+            otherUser: message.senderInfo || { userId: otherId, displayName: otherId.substring(0, 10) },
+            lastMessage: message.content || `[${message.type}]`,
+            lastMessageTime: message.timestamp,
+          };
+          return [stub, ...prev];
         }
-        return prev;
       });
 
       // increment unread if not active chat
-      if (activeChat?.id !== message.fromUserId) {
+      const activeChatSnap2 = activeChatRef.current;
+      if (activeChatSnap2?.id !== message.fromUserId) {
         setUnreadCounts(prev => ({
           ...prev,
           [message.fromUserId]: (prev[message.fromUserId] || 0) + 1
@@ -223,7 +237,9 @@ export function StudyChatProvider({ children }) {
 
   // ── Open Chat ─────────────────────────────────────────────────────────
   const openChat = useCallback(async (type, id, name, avatar = "") => {
-    setActiveChat({ type, id, name, avatar });
+    const chatObj = { type, id, name, avatar };
+    setActiveChat(chatObj);
+    activeChatRef.current = chatObj;
     setMessages([]);
 
     // clear unread
