@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useUserContext } from "../../contexts/UserContext";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -112,7 +111,6 @@ function Dashboard() {
   const { currentUser } = useUserContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const base = `/dashboard/${currentUser?.email}`;
 
@@ -572,16 +570,8 @@ function Dashboard() {
       `}</style>
 
       <div className="prism-shell">
-        <aside className={`prism-sidebar ${sidebarOpen ? "expanded" : ""}`}>
+        <aside className="prism-sidebar expanded">
           <div className="sidebar-top">
-            <button
-              className="sidebar-toggle"
-              onClick={() => setSidebarOpen((value) => !value)}
-              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              <Icon name={sidebarOpen ? "chevron" : "menu"} size={20} />
-            </button>
             <div className="sidebar-brand">
               <div className="brand-name">
                 Prism <span className="ai-badge">AI</span>
